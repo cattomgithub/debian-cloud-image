@@ -41,8 +41,13 @@ jobs:
             export DEBIAN_FRONTEND=noninteractive
             export LIBGUESTFS_BACKEND=direct
             sudo dpkg-statoverride --update --add root root 0644 /boot/vmlinuz-$(uname -r)
-            sudo usermod -aG kvm $USER
-            sudo chown $USER /dev/kvm
+            if[ -e /dev/kvm ]; then
+              sudo usermod -aG kvm $USER
+              sudo chown $USER /dev/kvm
+              echo "KVM hardware acceleration has been enabled."
+            else
+              echo "Warning: The current CI machine does not have hardware virtualization enabled (no /dev/kvm), and will automatically downgrade to run in software emulation (TCG) mode."
+            fi
             virt-customize -a debian-13-genericcloud-amd64.qcow2 \
               --smp 1 --verbose \
               --timezone "Asia/Shanghai" \

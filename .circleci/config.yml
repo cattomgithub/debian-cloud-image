@@ -11,14 +11,10 @@ jobs:
           name: Install build dependencies
           command: |
             sudo apt update -y
-            sudo apt install -y libguestfs-tools qemu-utils wget curl zstd
+            sudo apt install -y libguestfs-tools qemu-utils wget curl axel
+            axel -n 8 -o debian-13-genericcloud-amd64-source.qcow2 https://cloud.debian.org/images/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2
       - run:
-          name: Download image
-          command: |
-            wget https://cloud.debian.org/images/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2 -O debian-13-genericcloud-amd64.qcow2
-
-      - run:
-          name: Prepare debian.sources file
+          name: Customize the image
           command: |
             # TUNA mirror in DEB822
             cat \<< 'EOF' > debian.sources
@@ -35,11 +31,9 @@ jobs:
             Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
             EOF
 
-      - run:
-          name: Customize Debian 13 image
-          command: |
             export DEBIAN_FRONTEND=noninteractive
             export LIBGUESTFS_BACKEND=direct
+            
             sudo dpkg-statoverride --update --add root root 0644 /boot/vmlinuz-$(uname -r)
             if [ -e /dev/kvm ]; then
               sudo usermod -aG kvm $USER
@@ -48,7 +42,8 @@ jobs:
             else
               echo "Warning: The current CI machine does not have hardware virtualization enabled (no /dev/kvm), and will automatically downgrade to run in software emulation (TCG) mode."
             fi
-            virt-customize -a debian-13-genericcloud-amd64.qcow2 \
+            
+            virt-customize -a debian-13-genericcloud-amd64-source.qcow2 \
               --smp 1 --verbose \
               --timezone "Asia/Shanghai" \
               --append-line "/etc/default/grub:# disables OS prober to avoid loopback detection which breaks booting" \
@@ -57,7 +52,7 @@ jobs:
               --run-command "systemctl enable serial-getty@ttyS1.service" \
               --append-line "/etc/systemd/timesyncd.conf:NTP=time.apple.com time.windows.com" \
               --run-command "sed -i 's|generate_mirrorlists: true|generate_mirrorlists: false|g' /etc/cloud/cloud.cfg.d/01_debian_cloud.cfg" \
-              --update --install "unzip,ssh,git,nano,wget,curl,jq,ca-certificates,rename,net-tools,tar,debian-keyring,debian-archive-keyring,apt-transport-https,qemu-guest-agent,spice-vdagent,axel,sudo,bash-completion,most,screen,less,bzip2,zstd" \
+              --update --install "unzip,ssh,git,nano,wget,curl,jq,ca-certificates,rename,net-tools,tar,debian-keyring,debian-archive-keyring,apt-transport-https,qemu-guest-agent,spice-vdagent,axel,sudo,bash-completion,most,screen,less" \
               --run-command "apt-get -y autoremove --purge && apt-get -y clean" \
               --delete "/etc/apt/sources.list" \
               --delete "/etc/apt/sources.list.d/debian.sources" \
@@ -67,13 +62,12 @@ jobs:
               --delete "/var/cache/apt/*" \
               --truncate "/etc/machine-id"
       - run:
-          name: Compress image artifact
+          name: Compress the artifact
           command: |
-            zstd -T0 -10 debian-13-genericcloud-amd64.qcow2 -o debian-13-genericcloud-amd64-customized.qcow2.zst
-
+            virt-sparsify --compress debian-13-genericcloud-amd64-source.qcow2 debian-13-genericcloud-amd64-customized.qcow2
       - store_artifacts:
-          path: debian-13-genericcloud-amd64-customized.qcow2.zst
-          destination: debian-13-genericcloud-amd64-customized.qcow2.zst
+          path: debian-13-genericcloud-amd64-customized.qcow2
+          destination: debian-13-genericcloud-amd64-customized.qcow2
 
 workflows:
   version: 2

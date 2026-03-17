@@ -21,7 +21,7 @@ jobs:
           name: Prepare debian.sources file
           command: |
             # TUNA mirror in DEB822
-            cat << 'EOF' > debian.sources
+            cat \<< 'EOF' > debian.sources
             Types: deb
             URIs: https://mirrors.tuna.tsinghua.edu.cn/debian
             Suites: trixie trixie-updates trixie-backports

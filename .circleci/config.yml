@@ -57,12 +57,11 @@ jobs:
               --run-command "systemctl enable serial-getty@ttyS1.service" \
               --append-line "/etc/systemd/timesyncd.conf:NTP=time.apple.com time.windows.com" \
               --run-command "sed -i 's|generate_mirrorlists: true|generate_mirrorlists: false|g' /etc/cloud/cloud.cfg.d/01_debian_cloud.cfg" \
+              --update --install "unzip,ssh,git,nano,wget,curl,jq,ca-certificates,rename,net-tools,tar,debian-keyring,debian-archive-keyring,apt-transport-https,qemu-guest-agent,spice-vdagent,axel,sudo,bash-completion,most,screen,less,bzip2,zstd" \
+              --run-command "apt-get -y autoremove --purge && apt-get -y clean" \
               --delete "/etc/apt/sources.list" \
               --delete "/etc/apt/sources.list.d/debian.sources" \
               --upload debian.sources:/etc/apt/sources.list.d/debian.sources \
-              --update --install "unzip,ssh,git,nano,wget,curl,jq,ca-certificates,rename,net-tools,tar,debian-keyring,debian-archive-keyring,apt-transport-https,qemu-guest-agent,spice-vdagent,axel,sudo,bash-completion,most,screen,less,bzip2,zstd" \
-              --run-command "apt-get -y autoremove --purge && apt-get -y clean" \
-              --delete "/root/install-docker.sh" \
               --delete "/var/log/*.log" \
               --delete "/var/lib/apt/lists/*" \
               --delete "/var/cache/apt/*" \

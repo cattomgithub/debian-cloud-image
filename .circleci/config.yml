@@ -41,7 +41,7 @@ jobs:
             export DEBIAN_FRONTEND=noninteractive
             export LIBGUESTFS_BACKEND=direct
             sudo dpkg-statoverride --update --add root root 0644 /boot/vmlinuz-$(uname -r)
-            if[ -e /dev/kvm ]; then
+            if [ -e /dev/kvm ]; then
               sudo usermod -aG kvm $USER
               sudo chown $USER /dev/kvm
               echo "KVM hardware acceleration has been enabled."
